@@ -2,12 +2,18 @@ from keys import keys
 
 import json
 import subprocess
+import numpy as np
 from time import sleep
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy import API
+
+from sklearn.externals import joblib
+
+model = joblib.load('vc_model.pkl')
+tfidf = joblib.load('tfidf.pkl')
 
 consumer_key = keys['consumer_key']
 consumer_secret = keys['consumer_secret']
@@ -27,7 +33,7 @@ class ReplyToTweet(StreamListener):
 
     def on_data(self, data):
         # print (data)
-        print('Tweet Received!  Preparing response...')
+        print('Data Received')
         tweet = json.loads(data.strip())
         
         retweeted = tweet.get('retweeted')
@@ -39,21 +45,56 @@ class ReplyToTweet(StreamListener):
             screenName = tweet.get('user',{}).get('screen_name')
             tweetText = tweet.get('text')
 
+            print('Tweet ID: ' + tweetId)
+            print('From: ' + screenName)
+            print('Tweet Text: ' + tweetText, '\n')
             
             bot_username_length = len(stream_rule)
             start_text_seed = tweetText[bot_username_length:]
             length = str(140 - len(start_text_seed))
-            
+
             # 0.0 - 1.0, higher == more 'creative'
             temperature = str(0.6)
 
-            bash = ['th', 'sample.lua', '-checkpoint', checkpoint_file_path, '-length', length, '-temperature', temperature, '-start_text', start_text_seed, '-gpu', '-1']
+            # generate potential responses
+            possible_responses = []
 
-            process = subprocess.run(bash, cwd=torch_rnn_path, stdout=subprocess.PIPE)
-            # wait for bash output to finish
-            sleep(10)
+            for i in range(10):
+                bash = ['th', 'sample.lua', '-checkpoint', checkpoint_file_path, '-length', length, '-temperature', temperature, '-start_text', start_text_seed, '-gpu', '-1']
 
-            chatResponse = str(process.stdout.decode('utf-8'))[:-len(screenName)]
+                process = subprocess.run(bash, cwd=torch_rnn_path, stdout=subprocess.PIPE)
+                # wait for bash output to finish
+                sleep(4)
+
+                chatResponse = str(process.stdout.decode('utf-8'))[:-len(screenName)]
+
+                punctuation = ".!?"
+                last_punc = 0
+
+                for z, char in enumerate(chatResponse):
+                    if char in punctuation:
+                        last_punc = z+1
+
+                possible_responses.append(chatResponse[:last_punc])
+                print(i, chatResponse[:last_punc], '\n')
+
+
+            predictions = model.predict_proba(tfidf.transform(np.array(possible_responses)))
+
+            max_proba_index = 0
+            max_proba = 0
+
+            for b, x in enumerate(predictions):
+                if x[1] > max_proba:
+                    max_proba_index = b
+                    max_proba = x[1]
+
+
+            print('Index: ', max_proba_index)
+            print('Max Proba: ', max_proba)
+            print('Reponse: ',  possible_responses[max_proba_index], '\n')
+            
+            chatResponse = possible_responses[max_proba_index]
 
             replyText = '.@' + screenName + ' ' + chatResponse
 
@@ -61,13 +102,11 @@ class ReplyToTweet(StreamListener):
             if len(replyText) > 140:
                 replyText = replyText[0:139] + '…'
 
-            print('Tweet ID: ' + tweetId)
-            print('From: ' + screenName)
-            print('Tweet Text: ' + tweetText)
+            
             print('Reply Text: ' + replyText)
 
             # If rate limited, the status posts should be queued up and sent on an interval
-            twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
+            # twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
 
     def on_error(self, status):
         print (status)
