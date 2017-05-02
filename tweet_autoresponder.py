@@ -4,6 +4,7 @@ import json
 import subprocess
 import numpy as np
 from time import sleep
+import re
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -12,7 +13,7 @@ from tweepy import API
 
 from sklearn.externals import joblib
 
-model = joblib.load('vc_model.pkl')
+model = joblib.load('lr_model.pkl')
 tfidf = joblib.load('tfidf.pkl')
 
 consumer_key = keys['consumer_key']
@@ -75,8 +76,9 @@ class ReplyToTweet(StreamListener):
                     if char in punctuation:
                         last_punc = z+1
 
-                possible_responses.append(chatResponse[:last_punc])
-                print(i, chatResponse[:last_punc], '\n')
+                final_response = re.sub( '\s+', ' ', chatResponse[:last_punc]).strip()
+                possible_responses.append(final_response)
+                print(i, final_response, '\n')
 
 
             predictions = model.predict_proba(tfidf.transform(np.array(possible_responses)))
