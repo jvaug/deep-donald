@@ -1,4 +1,7 @@
 # deep-donald
+
+### INCOMPLETE
+
 Neural network Trump twitter auto-reply bot
 
 @DeepDonald_
