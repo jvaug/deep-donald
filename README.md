@@ -40,12 +40,22 @@ The models and TF-IDF transformer were pickled to allow easy implementation in t
 
 #### Tweet Responses
 
-The Twitter reply framework was built off [sample-twitter-autoreply](https://github.com/twitterdev/sample-python-autoreply).  A few challenges presented themselves during this implementation.  I was able to utilize bash for the text generation through the `subprocess` library.  10 sample tweets were generated (the RNN still struggles to produce grammatically accurate sentences with every output) and these were then transformed (after trimming them based on their punctuation) and then run through the voting classifier.  The highest probability sample was selected as the response to the user's query.  
+The Twitter reply framework was built off [sample-python-autoreply](https://github.com/twitterdev/sample-python-autoreply).  A few challenges presented themselves during this implementation.  I was able to utilize bash for the text generation through the `subprocess` library.  10 sample tweets were generated (the RNN still struggles to produce grammatically accurate sentences with every output) and these were then transformed (after trimming them based on their punctuation) and then run through the voting classifier.  The highest probability sample was selected as the response to the user's query.  
 
 ### Conclusions
 
-I really enjoyed threading all of the existing projects and data together to provide a new service/output during this project.  I borrowed heavily from many authors to provide a unique product 
+I really enjoyed threading all of the existing projects and data together to provide a new service/output during this project.  It really showed me the power of open source and I was happy I was able to provide a unique product.
 
+I wish my output could more consistently capture the essence of Trump.  I think specializing the input data prior to running it through the recurrent neural network could have helped my final ouput.  I alluded to this already in my data cleaning/collection section.  Incorporating the classification model definitely improved things.
+
+I think this framework can be applied to other famous figures very easily and I hope to eventually have it as plug-and-play as possible. 
 
 ### Future Direction
 
+Several ideas that I hope to implement in the future:
+
+Grammar checking the sampled tweets prior to feeding them into the classifer
+Further refinement of the training corpus
+Implementation of a direct Python-> LUA framework, rather than the bash workaround utilized here
+AWS training of the text generation model to iterate more quickly over different hyperparameters
+Have it go viral!
