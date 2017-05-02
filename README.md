@@ -54,8 +54,8 @@ I think this framework can be applied to other famous figures very easily and I 
 
 Several ideas that I hope to implement in the future:
 
-Grammar checking the sampled tweets prior to feeding them into the classifer
-Further refinement of the training corpus
-Implementation of a direct Python-> LUA framework, rather than the bash workaround utilized here
-AWS training of the text generation model to iterate more quickly over different hyperparameters
-Have it go viral!
+* Grammar checking the sampled tweets prior to feeding them into the classifer
+* Further refinement of the training corpus
+* Implementation of a direct Python-> LUA framework, rather than the bash workaround utilized here
+* AWS training of the text generation model to iterate more quickly over different hyperparameters
+* Have it go viral!
