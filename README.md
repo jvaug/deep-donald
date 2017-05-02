@@ -26,14 +26,25 @@ For the traditional modeling portion of this project, TF-IDF vectorization was u
 
 ### Modeling
 
-Recurrent neural network - used RNN implementation in Torch https://github.com/jcjohnson/torch-rnn.  We used character level so that user inputs wouldn't have to be limited to words already present in the corpus (we can use model to generate output on topics trump has never spoken about before this way).
+#### Text Generation
 
-Model was trained with 3 layers, 512 nodes.
+I implemented Torch-RNN (https://github.com/jcjohnson/torch-rnn) to handle all the text generation for this script.  Character level generation, rather than word level, was used so that user inputs wouldn't have to be limited to words already present in the "Donald Trump lexicon".  This also allows us to generate output on topics Trump has never publicly commented on before.  We are also saved from having to spell check/significantly sanitize the inputs into the model.
 
-Tweet classifying model is a voting classifier estimator running with a logistic regression, random forest and extra trees model.  The base model score was .15 while the test score was .89, indicating a very significant improvement via modeling.  The models and TF-IDF transformer were pickled to allow easy implementation in the twitter response script.
+Larger models consistently outperformed smaller models while length of training time didn't always translate into better results.  The final model was trained with the following hyperparameters `-rnn_size 512 -num_layers 3` for the default number of epochs.  Iterations were done through several other setups; often the limiting factor was computing power.
+
+#### Tweet Classification
+
+The Tweet classification model is a voting classifier estimator built with a logistic regression, random forest and extra trees model.  The base model score was .15 while the test score was .89, indicating a very significant improvement via modeling.  XGBoost did not perform as expected and was thus not included in the final classifier.  
+
+The models and TF-IDF transformer were pickled to allow easy implementation in the twitter response script.
+
+#### Tweet Responses
+
+The Twitter reply framework was built off [sample-twitter-autoreply](https://github.com/twitterdev/sample-python-autoreply).  A few challenges presented themselves during this implementation.  I was able to utilize bash for the text generation through the `subprocess` library.  10 sample tweets were generated (the RNN still struggles to produce grammatically accurate sentences with every output) and these were then transformed (after trimming them based on their punctuation) and then run through the voting classifier.  The highest probability sample was selected as the response to the user's query.  
 
 ### Conclusions
 
+I really enjoyed threading all of the existing projects and data together to provide a new service/output during this project.  I borrowed heavily from many authors to provide a unique product 
 
 
 ### Future Direction
