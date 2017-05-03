@@ -5,6 +5,7 @@ import subprocess
 import numpy as np
 from time import sleep
 import re
+import language_check
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -30,11 +31,12 @@ auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 twitterApi = API(auth)
 
+tool = language_check.LanguageTool('en-US')
+
 class ReplyToTweet(StreamListener):
 
     def on_data(self, data):
-        # print (data)
-        print('Data Received')
+        # print(data)
         tweet = json.loads(data.strip())
         
         retweeted = tweet.get('retweeted')
@@ -60,7 +62,7 @@ class ReplyToTweet(StreamListener):
             # generate potential responses
             possible_responses = []
 
-            for i in range(10):
+            for i in range(1,16):
                 bash = ['th', 'sample.lua', '-checkpoint', checkpoint_file_path, '-length', length, '-temperature', temperature, '-start_text', start_text_seed, '-gpu', '-1']
 
                 process = subprocess.run(bash, cwd=torch_rnn_path, stdout=subprocess.PIPE)
@@ -77,9 +79,15 @@ class ReplyToTweet(StreamListener):
                         last_punc = z+1
 
                 final_response = re.sub( '\s+', ' ', chatResponse[:last_punc]).strip()
-                possible_responses.append(final_response)
-                print(i, final_response, '\n')
 
+                print('Pre ', i, chatResponse, '\n')
+                print('Trim', i, final_response, '\n')
+
+                matches = tool.check(final_response)
+                final_response = language_check.correct(final_response, matches)
+                print('Post', i, final_response, '\n\n')
+
+                possible_responses.append(final_response)
 
             predictions = model.predict_proba(tfidf.transform(np.array(possible_responses)))
 
@@ -93,7 +101,7 @@ class ReplyToTweet(StreamListener):
 
 
             print('Index: ', max_proba_index)
-            print('Max Proba: ', max_proba)
+            print('Proba: ', str(max_proba*100)[0:5], '%')
             print('Reponse: ',  possible_responses[max_proba_index], '\n')
             
             chatResponse = possible_responses[max_proba_index]
@@ -105,7 +113,7 @@ class ReplyToTweet(StreamListener):
                 replyText = replyText[0:139] + '…'
 
             
-            print('Reply Text: ' + replyText)
+            print('Reply Tweet: ' + replyText)
 
             # If rate limited, the status posts should be queued up and sent on an interval
             # twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
