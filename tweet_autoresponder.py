@@ -57,17 +57,17 @@ class ReplyToTweet(StreamListener):
             length = str(140 - len(start_text_seed))
 
             # 0.0 - 1.0, higher == more 'creative'
-            temperature = str(0.6)
+            temperature = str(0.45)
 
             # generate potential responses
             possible_responses = []
 
-            for i in range(1,16):
+            for i in range(1,11):
                 bash = ['th', 'sample.lua', '-checkpoint', checkpoint_file_path, '-length', length, '-temperature', temperature, '-start_text', start_text_seed, '-gpu', '-1']
 
                 process = subprocess.run(bash, cwd=torch_rnn_path, stdout=subprocess.PIPE)
                 # wait for bash output to finish
-                sleep(4)
+                sleep(2)
 
                 chatResponse = str(process.stdout.decode('utf-8'))[:-len(screenName)]
 
@@ -100,13 +100,15 @@ class ReplyToTweet(StreamListener):
                     max_proba = x[1]
 
 
-            print('Index: ', max_proba_index)
+            print('Index: ', max_proba_index+1)
             print('Proba: ', str(max_proba*100)[0:5], '%')
             print('Reponse: ',  possible_responses[max_proba_index], '\n')
-            
+            for i in zip(range(1,16), predictions):
+                print(i[0], ' - ', str(i[1][1]*100)[0:5], '%')
+
             chatResponse = possible_responses[max_proba_index]
 
-            replyText = '.@' + screenName + ' ' + chatResponse
+            replyText = '.@' + screenName + ' [' + tweetText[bot_username_length+1:] + '] '+ chatResponse[len(start_text_seed):]
 
             #check if response is over 140 char
             if len(replyText) > 140:
@@ -116,7 +118,7 @@ class ReplyToTweet(StreamListener):
             print('Reply Tweet: ' + replyText)
 
             # If rate limited, the status posts should be queued up and sent on an interval
-            # twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
+            twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
 
     def on_error(self, status):
         print (status)
